@@ -1,0 +1,255 @@
+package com.cg.playerselectionbyspringmvc.dto;
+import java.util.ArrayList;
+
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+/**
+ * @Entity Indicates that a class declares as a Entity.
+ * @Table Annotation is used for creating table as name Game. 
+ * 
+ * @author nikitade
+ *
+ */
+
+@Entity
+@Table(name="Game")
+public class Game {
+	@Id
+    @Column(name="gameId")
+	private int gameId;
+	public int getGameId() {
+		return gameId;
+	}
+	public void setGameId(int gameId) {
+		this.gameId = gameId;
+	}
+	@Column(name="gamename")
+	private String name;
+	@OneToMany(targetEntity=Player.class)
+	@JoinColumn(name="gameId")
+	private List<Player> myplayerlist=new ArrayList<Player>();
+	@Override
+	public String toString() {
+		return "Game [gameId=" + gameId + ", name=" + name + ", myplayerlist=" + myplayerlist + "]";
+	}
+	public Game(int gameId, String name, List<Player> myplayerlist) {
+		super();
+		this.gameId = gameId;
+		this.name = name;
+		this.myplayerlist = myplayerlist;
+	}
+	public Game() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public List<Player> getMyplayerlist() {
+		return myplayerlist;
+	}
+	public void setMyplayerlist(List<Player> myplayerlist) {
+		this.myplayerlist = myplayerlist;
+	}
+	
+}
+
+
+
+
+
+
+
+
+
+package com.cg.playerselectionbyspringmvc.dto;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="playerMvc")
+public class Player {
+	
+	@Id
+	@Column(name="player_id")
+	private int playerId;
+	@Column(name="player_skill")
+	private String skill;
+	@Column(name="player_name")
+	private String name;
+	public Player() {
+		super();
+	}
+	public Player(String name, int playerId, String skill) {
+		super();
+		this.name = name;
+		this.playerId = playerId;
+		this.skill = skill;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public int getPlayerId() {
+		return playerId;
+	}
+	public void setPlayerId(int playerId) {
+		this.playerId = playerId;
+	}
+
+	public String getSkill() {
+		return skill;
+	}
+	public void setSkill(String skill) {
+		this.skill = skill;
+	}
+	@Override
+	public String toString() {
+		return "Player [name=" + name + ", playerId=" + playerId  + ", skill=" + skill + "]";
+	}
+
+
+}
+
+
+
+
+
+
+package com.cg.playerselectionbyspringmvc.javaconfig;
+
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.hibernate5.HibernateTransactionManager;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+@Configuration
+@EnableTransactionManagement
+@PropertySource("classpath:resources/mysql.properties")
+@ComponentScan("com.cg.playerselectionbyspringmvc")
+public class AppContexts {
+	@Autowired
+	private Environment environment;
+
+	@Bean
+	public LocalSessionFactoryBean sessionFactory() {
+		LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
+		sessionFactory.setDataSource(dataSource());
+		sessionFactory.setPackagesToScan(new String[] { "com.cg.playerselectionbyspringmvc.dto" });
+		sessionFactory.setHibernateProperties(hibernateProperties());
+		return sessionFactory;
+	}
+
+	@Bean
+	public DataSource dataSource() {
+		DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		dataSource.setDriverClassName(environment.getRequiredProperty("mysql.driver"));
+		dataSource.setUrl(environment.getRequiredProperty("mysql.url"));
+		dataSource.setUsername(environment.getRequiredProperty("mysql.username"));
+		dataSource.setPassword(environment.getRequiredProperty("mysql.password"));
+		return dataSource;
+	}
+
+	private Properties hibernateProperties() {
+		Properties properties = new Properties();
+		properties.put("hibernate.dialect", environment.getRequiredProperty("mysql.dialect"));
+		properties.put("hibernate.hbm2ddl.auto", environment.getRequiredProperty("mysql.auto"));
+		/*properties.put("hibernate.format_sql",true);*/
+		return properties;
+	}
+
+	@Bean
+	public HibernateTransactionManager getTransactionManager() {
+		HibernateTransactionManager transactionManager = new HibernateTransactionManager();
+		transactionManager.setSessionFactory(sessionFactory().getObject());
+		return transactionManager;
+	}
+	
+
+}
+
+
+
+package com.cg.playerselectionbyspringmvc.javaconfig;
+
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
+public class ApplicationInitializer extends AbstractAnnotationConfigDispatcherServletInitializer{
+    
+	//for database
+	@Override
+	protected Class<?>[] getRootConfigClasses() {
+		// TODO Auto-generated method stub
+		return new Class[] {AppContexts.class};
+	}
+    
+	@Override
+	protected Class<?>[] getServletConfigClasses() {
+		// TODO Auto-generated method stub
+		return new Class[] {WebMvc.class};//webmvc as dispatcher
+	}
+
+	@Override
+	protected String[] getServletMappings() {
+		// TODO Auto-generated method stub
+		return new String[] {"/"};
+	}
+
+}
+
+
+
+
+
+
+
+package com.cg.playerselectionbyspringmvc.javaconfig;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.web.servlet.view.JstlView;
+@Configuration
+@EnableWebMvc
+@ComponentScan("com.cg.playerselectionbyspringmvc")
+public class WebMvc implements WebMvcConfigurer{
+@Bean
+public InternalResourceViewResolver getAllView() {
+	InternalResourceViewResolver viewResolver=new InternalResourceViewResolver();
+	viewResolver.setViewClass(JstlView.class);
+	viewResolver.setSuffix(".jsp");
+	viewResolver.setPrefix("/WEB-INF/pages/");
+	
+	return viewResolver;
+}
+	
+	
+}
